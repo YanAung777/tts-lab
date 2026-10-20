@@ -37,6 +37,10 @@ Copy `.env.example` to `.env` to configure an engine. Never commit a real key.
 **Live demo:** <https://84t4n9p7eevus.space.minimax.io> (static build, no backend
 required — plays pre-rendered before/after audio and normalizes text in-browser)
 
+**CI:** the Actions workflow is in [`ci/ci.yml`](ci/ci.yml) and needs one manual
+move into `.github/workflows/` to activate — see [`ci/README.md`](ci/README.md)
+for why and how.
+
 ---
 
 ## The models
