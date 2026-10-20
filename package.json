@@ -1,0 +1,16 @@
+{
+  "name": "tts-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Natural-sounding TTS with NVIDIA Magpie: text normalization, multi-engine synthesis, and a live A/B lab.",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node src/normalize.test.js",
+    "smoke": "node scripts/smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
