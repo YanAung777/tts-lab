@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TTS Lab — NVIDIA Magpie</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <div>
+        <h1>TTS&nbsp;Lab</h1>
+        <p class="brand-sub">NVIDIA Magpie&nbsp;· <span id="engineLabel">detecting engine…</span></p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <label class="field inline">
+        <span>Engine</span>
+        <select id="engine">
+          <option value="matrix">Matrix (sandbox)</option>
+          <option value="nvidia-hosted">NVIDIA hosted NIM</option>
+          <option value="nvidia-local">NVIDIA local NIM</option>
+        </select>
+      </label>
+      <label class="field inline">
+        <span>Language</span>
+        <select id="language">
+          <option value="en-US">en-US</option>
+          <option value="es-US">es-US</option>
+          <option value="fr-FR">fr-FR</option>
+          <option value="de-DE">de-DE</option>
+          <option value="zh-CN">zh-CN</option>
+          <option value="ja-JP">ja-JP</option>
+          <option value="hi-IN">hi-IN</option>
+          <option value="ko-KR">ko-KR</option>
+          <option value="pt-BR">pt-BR</option>
+          <option value="it-IT">it-IT</option>
+          <option value="vi-VN">vi-VN</option>
+          <option value="ar-XA">ar-XA</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <section class="panel editor">
+      <div class="panel-head">
+        <h2>Text</h2>
+        <div class="panel-actions">
+          <button id="btnSample" class="btn ghost sm">Load sample</button>
+          <button id="btnReset" class="btn ghost sm">Reset</button>
+        </div>
+      </div>
+
+      <textarea id="text" spellcheck="false" placeholder="Type or paste the text you want spoken…"></textarea>
+
+      <div class="row">
+        <label class="field">
+          <span>Voice</span>
+          <select id="voice"></select>
+        </label>
+        <label class="field">
+          <span>Speed <b id="speedVal">1.00</b></span>
+          <input id="speed" type="range" min="0.5" max="2" step="0.05" value="1" />
+        </label>
+        <label class="field">
+          <span>Pitch <b id="pitchVal">0</b></span>
+          <input id="pitch" type="range" min="-12" max="12" step="1" value="0" />
+        </label>
+        <label class="field">
+          <span>Emotion</span>
+          <select id="emotion">
+            <option value="">—</option>
+            <option value="happy">happy</option>
+            <option value="neutral">neutral</option>
+            <option value="sad">sad</option>
+            <option value="angry">angry</option>
+            <option value="fearful">fearful</option>
+            <option value="disgusted">disgusted</option>
+            <option value="surprised">surprised</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="toggle">
+        <input id="normalize" type="checkbox" checked />
+        <span>Normalize text for speech <em>(numbers, currency, abbreviations, dates)</em></span>
+      </label>
+
+      <div class="actions">
+        <button id="btnSpeak" class="btn primary">Speak my text</button>
+        <button id="btnAB" class="btn">Read raw vs normalized</button>
+        <button id="btnCompare" class="btn">Compare sample voices</button>
+      </div>
+      <p id="status" class="status"></p>
+    </section>
+
+    <section class="panel preview">
+      <div class="panel-head">
+        <h2>Preview</h2>
+        <span id="engineBadge" class="badge">—</span>
+      </div>
+
+      <div class="preview-body">
+        <div id="playerWrap" class="player-wrap hidden">
+          <audio id="player" controls preload="auto"></audio>
+          <div class="player-meta">
+            <span id="playerVoice">—</span>
+            <span id="playerMeta" class="muted"></span>
+          </div>
+        </div>
+        <div id="emptyState" class="empty">
+          <div class="empty-icon">◍</div>
+          <p>Type text, then hit <b>Speak my text</b>.</p>
+          <p class="muted sm">Or use <b>Read raw vs normalized</b> to hear the difference on your own copy.</p>
+        </div>
+      </div>
+
+      <div class="panel-head sub">
+        <h3>Normalization preview</h3>
+        <span class="muted sm">what the model will actually receive</span>
+      </div>
+      <div id="normalized" class="norm-box"><span class="muted sm">Type something above…</span></div>
+    </section>
+
+  </main>
+
+  <section class="panel compare-panel hidden" id="comparePanel">
+    <div class="panel-head">
+      <h2>Sample voices — raw vs normalized</h2>
+      <button id="btnCloseCompare" class="btn ghost sm">Close</button>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card">
+        <div class="compare-head"><span class="dot raw"></span> Raw text (no normalization)</div>
+        <p id="rawText" class="compare-text"></p>
+        <audio id="rawPlayer" controls preload="none"></audio>
+        <span class="muted sm" id="rawMeta"></span>
+      </div>
+      <div class="compare-card">
+        <div class="compare-head"><span class="dot norm"></span> Normalized (spoken form)</div>
+        <p id="normText" class="compare-text"></p>
+        <audio id="normPlayer" controls preload="none"></audio>
+        <span class="muted sm" id="normMeta"></span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Magpie TTS: 357M params · 12 languages · NVIDIA Open Model License · TTFA 32–47&nbsp;ms</span>
+    <span class="dot-sep">·</span>
+    <a href="https://build.nvidia.com/nvidia/magpie-tts-multilingual" target="_blank" rel="noopener noreferrer">Get an NVIDIA API key</a>
+  </footer>
+
+</div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
