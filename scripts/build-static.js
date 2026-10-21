@@ -89,6 +89,21 @@ html = html.replace(
 if (html.includes('/app.js')) {
   throw new Error('Failed to swap app.js for static-app.js in index.html');
 }
+
+// Point the page at a live backend when one is configured, so the deployed
+// site does real server-side synthesis instead of the browser's voice.
+// TTS_BACKEND_URL is optional — without it the page falls back to the
+// browser speech engine and the pre-rendered samples.
+const backendUrl = (process.env.TTS_BACKEND_URL || '').replace(/\/+$/, '');
+if (backendUrl) {
+  html = html.replace(
+    '<head>',
+    `<head>\n<script>globalThis.TTS_BACKEND_URL=${JSON.stringify(backendUrl)};</script>`,
+  );
+  console.log(`Static build will call the live backend at ${backendUrl}`);
+} else {
+  console.log('Static build has no backend configured (browser voice + pre-rendered samples)');
+}
 await writeFile(join(OUT, 'index.html'), html);
 
 // The API-backed client is not needed in the static bundle.
