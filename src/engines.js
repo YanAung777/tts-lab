@@ -224,6 +224,34 @@ export async function nvidiaLocal({
 }
 
 /**
+ * Retry a command.
+ *
+ * The connector CLI intermittently fails with a transient "invalid signature"
+ * error (roughly 1 call in 3 during load). A live server should ride that
+ * out rather than return a 500 to the caller, so we retry with exponential
+ * backoff plus jitter.
+ */
+const TRANSIENT_RE = /invalid signature|ECONNRESET|ETIMEDOUT|socket hang up|fetch failed|network/i;
+
+async function execWithRetry(cmd, args, { timeout, attempts = 5, retryDelayMs = 1500 } = {}) {
+  let lastErr;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await execFileAsync(cmd, args, { timeout, maxBuffer: 8 * 1024 * 1024 });
+    } catch (err) {
+      lastErr = err;
+      const text = `${err.message} ${err.stderr || ''}`;
+      if (!TRANSIENT_RE.test(text) || i === attempts - 1) throw err;
+      // Exponential backoff with jitter, so concurrent requests don't
+      // retry in lockstep.
+      const wait = retryDelayMs * 2 ** i + Math.floor(Math.random() * 800);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  throw lastErr;
+}
+
+/**
  * Provider: the connector-backed Matrix TTS available in this environment.
  * 332 voices, emotion/pitch/speed control, returns an MP3.
  */
@@ -242,10 +270,10 @@ export async function matrixTts({
   if (pitch !== undefined) args.pitch = pitch;
   if (volume !== undefined) args.volume = volume;
 
-  const { stdout } = await execFileAsync(
+  const { stdout } = await execWithRetry(
     'mcode-tools',
     ['connector', 'call', 'connector__matrix__synthesize_speech', '--args', JSON.stringify(args)],
-    { timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 },
+    { timeout: timeoutMs },
   );
 
   let parsed;
@@ -258,9 +286,11 @@ export async function matrixTts({
     throw new Error(`Matrix TTS failed: ${parsed.message || 'unknown error'}`);
   }
 
-  const { stdout: urlOut } = await execFileAsync('mcode-tools', ['get_asset_url', parsed.node_id], {
-    timeout: 60000,
-  });
+  const { stdout: urlOut } = await execWithRetry(
+    'mcode-tools',
+    ['get_asset_url', parsed.node_id],
+    { timeout: 60000 },
+  );
   const { download_url: downloadUrl } = JSON.parse(urlOut);
 
   const res = await fetch(downloadUrl);
